@@ -14,16 +14,34 @@ from ament_index_python.packages import get_package_share_directory
 
 def generate_launch_description():
     pkg_share = get_package_share_directory('kobuki_nav')
-    nav2_params = os.path.join(pkg_share, 'config', 'nav2_params.yaml')
+    nav2_params = os.path.join(pkg_share, 'config', 'nomap_nav2_params.yaml')
 
-    slam_launch = IncludeLaunchDescription(
+    basebringup_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             PathJoinSubstitution([
-                FindPackageShare('kobuki_nav'),
+                FindPackageShare('kobuki_node'),
                 'launch',
-                'kobuki_slam.launch.py'
+                'kobuki_node.launch.py'
             ])
         )
+    )
+
+    lidar_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            PathJoinSubstitution([
+                FindPackageShare('sllidar_ros2'),
+                'launch',
+                'sllidar_c1_launch.py'
+            ])
+        )
+    )
+    tf_node = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='tf_basefootprint_to_laser',
+        # x y z yaw pitch roll parent child
+        # 把 0.20 0.00 0.15 改成你激光雷达相对底盘中心的安装位置
+        arguments=['0.0', '0.0', '0.15', '3.14', '0', '0', 'base_footprint', 'laser']
     )
 
     planner_server = Node(
@@ -101,6 +119,7 @@ def generate_launch_description():
     )
 
     nav2_group = GroupAction([
+        tf_node,
         planner_server,
         controller_server,
         # velocity_smoother,     
@@ -116,6 +135,7 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
-        slam_launch,
+        basebringup_launch,
+        lidar_launch,
         delayed_nav2,
     ])
