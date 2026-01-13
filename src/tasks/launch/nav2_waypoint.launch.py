@@ -2,9 +2,14 @@
 import os
 
 from launch import LaunchDescription
+from launch.actions import TimerAction, GroupAction
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
-from ament_index_python.packages import get_package_share_directory
+from launch_ros.substitutions import FindPackageShare
+from launch.substitutions import PathJoinSubstitution
+from launch.actions import IncludeLaunchDescription
 
+from ament_index_python.packages import get_package_share_directory
 
 def generate_launch_description():
     pkg_share = get_package_share_directory('kobuki_nav')
@@ -38,9 +43,30 @@ def generate_launch_description():
                 # 'bond_timeout': 0.0,
             }]
     )
+        
+    slam_launch= IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            PathJoinSubstitution([
+                FindPackageShare('kobuki_nav'),
+                'launch',
+                'kobuki_slam.launch.py'
+            ])
+        )
+    )
+    nav2_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            PathJoinSubstitution([
+                FindPackageShare('kobuki_nav'),
+                'launch',
+                'nomap_nav2.launch.py'
+            ])
+        )
+    )
+
 
     return LaunchDescription([
-        slam_node,
         tf_node,
-        life_cycle_node
+        slam_node,
+        life_cycle_node,
+        TimerAction(period=10.0, actions=[nav2_launch]),
     ])

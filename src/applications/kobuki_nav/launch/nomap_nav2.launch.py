@@ -16,34 +16,6 @@ def generate_launch_description():
     pkg_share = get_package_share_directory('kobuki_nav')
     nav2_params = os.path.join(pkg_share, 'config', 'nomap_nav2_params.yaml')
 
-    basebringup_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            PathJoinSubstitution([
-                FindPackageShare('kobuki_node'),
-                'launch',
-                'kobuki_node.launch.py'
-            ])
-        )
-    )
-
-    lidar_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            PathJoinSubstitution([
-                FindPackageShare('sllidar_ros2'),
-                'launch',
-                'sllidar_c1_launch.py'
-            ])
-        )
-    )
-    tf_node = Node(
-        package='tf2_ros',
-        executable='static_transform_publisher',
-        name='tf_basefootprint_to_laser',
-        # x y z yaw pitch roll parent child
-        # 把 0.20 0.00 0.15 改成你激光雷达相对底盘中心的安装位置
-        arguments=['0.0', '0.0', '0.15', '3.14', '0', '0', 'base_footprint', 'laser']
-    )
-
     planner_server = Node(
         package='nav2_planner',
         executable='planner_server',
@@ -118,8 +90,8 @@ def generate_launch_description():
         }]
     )
 
-    nav2_group = GroupAction([
-        tf_node,
+    return LaunchDescription([
+
         planner_server,
         controller_server,
         # velocity_smoother,     
@@ -127,15 +99,4 @@ def generate_launch_description():
         bt_navigator,
         waypoint_follower,
         lifecycle_nav2,
-    ])
-
-    delayed_nav2 = TimerAction(
-        period=5.0,
-        actions=[nav2_group]
-    )
-
-    return LaunchDescription([
-        basebringup_launch,
-        lidar_launch,
-        delayed_nav2,
     ])

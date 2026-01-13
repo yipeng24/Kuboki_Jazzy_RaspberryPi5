@@ -2,6 +2,10 @@ slam_toolbox:
   ros__parameters:
     use_sim_time: false
 
+    # qos_overrides:
+    #   /scan:
+    #     subscription:
+    #       reliability: reliable
     # TF / topic 相关
     odom_frame: odom
     map_frame: map
